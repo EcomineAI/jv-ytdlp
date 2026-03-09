@@ -6,7 +6,7 @@
 ███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║██║██║ ╚████║███████╗██║  ██║██║
 ╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═╝
 
-  jv-ytdlp v0.2  —  Browser-based video downloader powered by yt-dlp
+  jv-ytdlp v0.2  —  Browser-based Video downloader powered by yt-dlp
 ```
 
 ---
@@ -15,13 +15,13 @@
 [![Platform](https://img.shields.io/badge/platform-Windows-0066ff?style=flat-square)](https://github.com/EcomineAI)
 [![License](https://img.shields.io/badge/license-MIT-00ffff?style=flat-square)](LICENSE.txt)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-00ff88?style=flat-square)](https://nodejs.org)
-[![yt-dlp](https://img.shields.io/badge/powered%20by-yt--dlp%201800%2B%20sites-ff6600?style=flat-square)](https://github.com/yt-dlp/yt-dlp)
+[![yt-dlp](https://img.shields.io/badge/powered%20by-yt--dlp-ff6600?style=flat-square)](https://github.com/yt-dlp/yt-dlp)
 
 ---
 
 ## What is this?
 
-**jv-ytdlp** is a local desktop app that runs on your Windows PC and lets you download videos from YouTube and 1,800+ other sites through a clean browser UI — no command line needed after setup.
+**jv-ytdlp** is a local desktop app that runs on your Windows PC and lets you download YouTube videos through a clean browser UI — no command line needed after setup.
 
 Paste a URL → pick quality → download. That's it.
 
@@ -33,7 +33,8 @@ Two options are available from the [Releases](https://github.com/EcomineAI/jv-yt
 
 | File | Description |
 |------|-------------|
-| `jv-ytdlp Setup 0.2.0.exe` | **Recommended.** One-click installer — installs the app, creates a desktop shortcut, and handles everything automatically. |
+| `JVDownloader.Setup.0.2.0.exe` | **Recommended.** One-click installer — installs the app, creates a desktop shortcut, and handles everything automatically. |
+| `jv-ytdlp-0.2.0-source.zip` | Source code archive. For developers who want to inspect, modify, or build from scratch. Requires Node.js ≥ 18. |
 
 > **Just want to download videos?** Grab the `.exe` installer. No Node.js required.
 
@@ -54,7 +55,7 @@ Two options are available from the [Releases](https://github.com/EcomineAI/jv-yt
 
 ## Install (exe — recommended)
 
-1. Download `jv-ytdlp Setup 0.2.0.exe` from [Releases](https://github.com/EcomineAI/jv-ytdlp/releases/tag/v0.2)
+1. Download `JVDownloader.Setup.0.2.0.exe` from [Releases](https://github.com/EcomineAI/jv-ytdlp/releases/tag/v0.2)
 2. Run the installer
 3. Launch **JVDownloader** from your desktop or Start Menu
 4. On first launch, click **Install Tools** — yt-dlp and ffmpeg download automatically (~30 MB, one time only)
@@ -62,9 +63,20 @@ Two options are available from the [Releases](https://github.com/EcomineAI/jv-yt
 
 ---
 
+## Build from Source (zip)
+
+For developers only.
+
+### Requirements
+
+- Windows 10 / 11
+- Node.js ≥ 18 — [nodejs.org](https://nodejs.org)
+
+---
+
 ## Usage
 
-1. Paste a video URL (YouTube, TikTok, Twitter/X, Instagram, and 1,800+ more)
+1. Paste a YouTube URL
 2. App auto-detects available qualities (~2 sec)
 3. Pick quality from the dropdown
 4. Optionally change the save folder or toggle MP3 mode
@@ -72,22 +84,6 @@ Two options are available from the [Releases](https://github.com/EcomineAI/jv-yt
 6. File saves to your Downloads folder (or chosen folder)
 
 ---
-
-## Files (source)
-
-```
-jv-ytdlp/
-├── main.js          — Electron main process + HTTP server
-├── preload.js       — Electron preload / IPC bridge
-├── index.html       — Downloader UI
-├── setup.html       — First-time setup screen
-├── icon.ico         — App icon (Windows)
-├── icon.png         — App icon (UI)
-├── package.json     — Build config
-├── BUILD.bat        — One-click build script
-├── LICENSE.txt
-└── README.md
-```
 
 ---
 
@@ -109,13 +105,13 @@ The app runs a local HTTP server on port `57329`. The Electron window loads the 
 → Format scan failed — download still works using best available quality.
 
 **Windows SmartScreen warning on installer**
-→ Expected for unsigned apps. Click "More info" → "Run anyway".
+→ Expected for unsigned apps. Click "More info" → "Run anyway". The app is open source — inspect the code in the source zip if you'd like to verify.
 
 ---
 
 ## Legal
 
-For personal use only. Downloading copyrighted content without permission may violate the Terms of Service of the respective platform and applicable copyright law. The developer is not responsible for misuse.
+For personal use only. Downloading copyrighted content without permission may violate Terms of Service. The developer is not responsible for misuse.
 
 ---
 
