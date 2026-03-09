@@ -55,7 +55,7 @@ Two options are available from the [Releases](https://github.com/EcomineAI/jv-yt
 
 ## Install (exe — recommended)
 
-1. Download `jv-ytdlp Setup 0.2.0.exe` from [Releases](https://github.com/EcomineAI/jv-ytdlp/releases/tag/v0.2)
+1. Download `JVDownloader.Setup.0.2.0.exe` from [Releases](https://github.com/EcomineAI/jv-ytdlp/releases/tag/v0.2)
 2. Run the installer
 3. Launch **JVDownloader** from your desktop or Start Menu
 4. On first launch, click **Install Tools** — yt-dlp and ffmpeg download automatically (~30 MB, one time only)
@@ -100,22 +100,6 @@ npm start
 6. File saves to your Downloads folder (or chosen folder)
 
 ---
-
-## Files (source)
-
-```
-jv-ytdlp/
-├── main.js          — Electron main process + HTTP server
-├── preload.js       — Electron preload / IPC bridge
-├── index.html       — Downloader UI
-├── setup.html       — First-time setup screen
-├── icon.ico         — App icon (Windows)
-├── icon.png         — App icon (UI)
-├── package.json     — Build config
-├── BUILD.bat        — One-click build script
-├── LICENSE.txt
-└── README.md
-```
 
 ---
 
