@@ -1,0 +1,15 @@
+{
+  "name": "jv-ytdlp",
+  "version": "0.1.0",
+  "description": "Browser-based YouTube downloader powered by yt-dlp — by EcomineAI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["youtube", "downloader", "yt-dlp", "video", "ffmpeg", "ecomineai"],
+  "author": "JV / EcomineAI",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
