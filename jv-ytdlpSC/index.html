@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>jv-ytdlp | EcomineAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ── THEME TOKENS ── */
+[data-theme="dark"] {
+  --bg:        #0f1117;
+  --bg2:       #161b27;
+  --surface:   #1c2333;
+  --surface2:  #242d40;
+  --surface3:  #2c3750;
+  --border:    #2e3a52;
+  --border2:   #3d4f6e;
+  --accent:    #3b82f6;
+  --accent2:   #60a5fa;
+  --accent3:   #93c5fd;
+  --accentbg:  rgba(59,130,246,0.12);
+  --green:     #34d399;
+  --greenbg:   rgba(52,211,153,0.1);
+  --yellow:    #fbbf24;
+  --yellowbg:  rgba(251,191,36,0.1);
+  --red:       #f87171;
+  --redbg:     rgba(248,113,113,0.1);
+  --text:      #e2e8f0;
+  --text2:     #94a3b8;
+  --muted:     #475569;
+  --shadow:    0 4px 24px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+}
+[data-theme="light"] {
+  --bg:        #f0f4f8;
+  --bg2:       #e8edf5;
+  --surface:   #ffffff;
+  --surface2:  #f8fafc;
+  --surface3:  #f1f5f9;
+  --border:    #e2e8f0;
+  --border2:   #cbd5e1;
+  --accent:    #2563eb;
+  --accent2:   #3b82f6;
+  --accent3:   #60a5fa;
+  --accentbg:  rgba(37,99,235,0.08);
+  --green:     #059669;
+  --greenbg:   rgba(5,150,105,0.08);
+  --yellow:    #d97706;
+  --yellowbg:  rgba(217,119,6,0.08);
+  --red:       #dc2626;
+  --redbg:     rgba(220,38,38,0.08);
+  --text:      #1e293b;
+  --text2:     #475569;
+  --muted:     #94a3b8;
+  --shadow:    0 4px 24px rgba(0,0,0,0.08);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── AURORA BACKGROUND ── */
+#aurora-canvas {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; opacity: 0.55;
+  transition: opacity 0.3s;
+}
+[data-theme="light"] #aurora-canvas { opacity: 0.3; }
+
+/* ── CHARACTER CANVAS ── */
+#char-canvas {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+}
+
+/* push content above canvases */
+.container, .theme-toggle, .quit-btn, #server-overlay { position: relative; z-index: 1; }
+
+/* legacy selectors kept for JS compat */
+.theme-toggle { display: none; }
+.quit-btn     { display: none; }
+.top-btns {
+  position: fixed; top: 20px; right: 20px; z-index: 100;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* shared pill style */
+.top-btn {
+  height: 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  color: var(--text2);
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+  text-decoration: none;
+  gap: 7px; padding: 0 14px;
+}
+.top-btn svg { flex-shrink: 0; }
+.top-btn.icon-only { width: 40px; padding: 0; border-radius: 50%; }
+
+/* GitHub */
+.top-btn.github:hover {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accentbg); transform: scale(1.06);
+}
+/* Theme toggle */
+.top-btn.theme:hover {
+  border-color: var(--accent); transform: scale(1.1) rotate(15deg);
+}
+/* Quit */
+.top-btn.quit:hover {
+  background: var(--redbg); border-color: var(--red);
+  color: var(--red); transform: scale(1.04);
+}
+
+/* Portfolio button */
+.top-btn.portfolio:hover {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accentbg); transform: scale(1.06);
+}
+
+/* ── EXTERNAL LINK CONFIRM POPUP ── */
+.ext-popup {
+  position: fixed; inset: 0; z-index: 9100;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(5px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeInBd 0.18s ease both;
+}
+.ext-popup-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 24px 24px 20px;
+  max-width: 340px; width: calc(100% - 40px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  animation: modalPop 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.ext-popup-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--accentbg); border: 1px solid rgba(59,130,246,0.2);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.ext-popup-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.ext-popup-url   {
+  font-size: 11px; color: var(--accent);
+  background: var(--accentbg); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 8px; padding: 7px 10px;
+  word-break: break-all; margin-bottom: 18px;
+  font-family: 'SF Mono','Fira Code',monospace;
+}
+.ext-popup-btns { display: flex; gap: 8px; }
+.ext-popup-btn  {
+  flex: 1; padding: 10px; border-radius: 10px; border: none;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ext-popup-btn.cancel { background: var(--surface2); color: var(--text2); border: 1.5px solid var(--border); }
+.ext-popup-btn.cancel:hover { border-color: var(--border2); color: var(--text); }
+.ext-popup-btn.go { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.35); }
+.ext-popup-btn.go:hover { background: var(--accent2); transform: translateY(-1px); }
+
+/* ── CONTAINER ── */
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 60px 20px 80px;
+}
+
+/* ── HEADER ── */
+header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: bounceIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.logo-wrap {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; margin-bottom: 8px;
+}
+
+.logo-img {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 0 0 3px var(--accentbg), var(--shadow-sm);
+}
+
+.app-name {
+  font-size: 28px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.5px;
+}
+.app-name span { color: var(--accent); }
+
+.app-sub {
+  font-size: 13px; color: var(--text2); font-weight: 400;
+  margin-bottom: 10px;
+}
+
+.version-badge {
+  display: inline-block;
+  background: var(--accentbg);
+  color: var(--accent2);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 10px; letter-spacing: 0.5px;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+}
+.card:hover { border-color: var(--border2); }
+
+.card-title {
+  font-size: 11px; font-weight: 600;
+  color: var(--text2); letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::before {
+  content: ''; width: 6px; height: 6px;
+  background: var(--accent); border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── STAGGERED CARD ANIMATIONS ── */
+.card:nth-child(1) { animation: bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both; }
+.card:nth-child(2) { animation: bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both; }
+.card:nth-child(3) { animation: bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both; }
+.card:nth-child(4) { animation: bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.4s both; }
+.card:nth-child(5) { animation: bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.5s both; }
+
+@keyframes bounceIn {
+  0%   { opacity:0; transform: translateY(20px) scale(0.97); }
+  60%  { opacity:1; transform: translateY(-4px) scale(1.01); }
+  100% { opacity:1; transform: translateY(0) scale(1); }
+}
+
+/* ── INPUTS ── */
+.input-wrap { position: relative; }
+.url-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 16px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+.url-input:focus {
+  border-color: var(--accent);
+  background: var(--surface3);
+  box-shadow: 0 0 0 4px var(--accentbg);
+}
+.url-input::placeholder { color: var(--muted); }
+
+.quality-status {
+  margin-top: 8px; font-size: 12px; min-height: 18px;
+  font-weight: 500; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.quality-status.scanning { color: var(--accent); }
+.quality-status.ready    { color: var(--green); }
+.quality-status.err      { color: var(--red); }
+
+.scanning-spin {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid var(--accentbg);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── OPTIONS GRID ── */
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.option-group { display: flex; flex-direction: column; gap: 6px; }
+.option-group.full { grid-column: 1/-1; }
+
+.field-label {
+  font-size: 11px; font-weight: 600;
+  color: var(--text2); letter-spacing: 0.5px;
+}
+
+select, input[type="text"] {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px; font-weight: 500;
+  outline: none; width: 100%;
+  transition: all 0.2s; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px;
+}
+select:focus, input[type="text"]:focus {
+  border-color: var(--accent); background: var(--surface3);
+  box-shadow: 0 0 0 4px var(--accentbg);
+}
+select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── TOGGLE ── */
+.toggle-row {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+  cursor: pointer; transition: all 0.2s; user-select: none;
+}
+.toggle-row:hover { border-color: var(--accent); background: var(--surface3); }
+.toggle-row.on { border-color: var(--accent); background: var(--accentbg); }
+.toggle {
+  width: 40px; height: 22px;
+  background: var(--border2); border-radius: 11px;
+  position: relative; transition: background 0.3s; flex-shrink: 0;
+}
+.toggle::after {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; background: white;
+  border-radius: 50%; top: 3px; left: 3px;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle.on { background: var(--accent); }
+.toggle.on::after { transform: translateX(18px); }
+.toggle-text strong { font-size: 14px; font-weight: 600; color: var(--text); display: block; }
+.toggle-text small { font-size: 12px; color: var(--text2); }
+
+/* ── BUTTONS ── */
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+
+.btn-primary {
+  flex: 1; padding: 13px;
+  background: var(--accent);
+  border: none; border-radius: 12px;
+  color: white; font-family: 'Inter', sans-serif;
+  font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+}
+.btn-primary:hover { background: var(--accent2); transform: translateY(-2px) scale(1.01); box-shadow: 0 6px 20px rgba(59,130,246,0.45); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-cancel {
+  padding: 13px 18px;
+  background: var(--redbg); border: 1.5px solid var(--red);
+  border-radius: 12px; color: var(--red);
+  font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; display: none;
+}
+.btn-cancel:hover { background: rgba(248,113,113,0.2); transform: scale(1.02); }
+.btn-cancel.visible { display: block; }
+
+/* ── PROGRESS CARD ── */
+#progress-section { display: none; }
+#progress-section.visible { display: block; }
+
+/* ── LIQUID TANK ── */
+.liquid-wrap {
+  display: flex; align-items: stretch;
+  gap: 12px; margin-bottom: 20px; height: 120px;
+}
+
+/* Narrow bar on the left — liquid fills here */
+.liquid-tank {
+  position: relative; width: 56px; flex-shrink: 0;
+  border-radius: 14px; overflow: hidden;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  box-shadow: inset 0 2px 12px rgba(0,0,0,0.3), var(--shadow-sm);
+}
+
+/* The rising liquid */
+.liquid-fill {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 0%;
+  background: linear-gradient(180deg,
+    rgba(96,165,250,0.85) 0%,
+    rgba(59,130,246,0.92) 40%,
+    rgba(37,99,235,0.98) 100%
+  );
+  transition: height 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 1;
+}
+
+/* Top wave */
+.liquid-fill::before {
+  content: '';
+  position: absolute; top: -14px; left: -60%;
+  width: 220%; height: 28px;
+  background: rgba(147,197,253,0.75);
+  border-radius: 45%;
+  animation: waveA 2.4s ease-in-out infinite;
+}
+.liquid-fill::after {
+  content: '';
+  position: absolute; top: -10px; left: -60%;
+  width: 220%; height: 20px;
+  background: rgba(96,165,250,0.45);
+  border-radius: 40%;
+  animation: waveB 3.1s ease-in-out infinite reverse;
+}
+@keyframes waveA {
+  0%,100% { transform: translateX(0) rotate(0deg); }
+  50%      { transform: translateX(8%) rotate(1deg); }
+}
+@keyframes waveB {
+  0%,100% { transform: translateX(0) rotate(0deg); }
+  50%      { transform: translateX(-8%) rotate(-1deg); }
+}
+
+/* Bubble particles inside bar */
+.liquid-bubble {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  animation: bubbleRise linear infinite;
+  z-index: 2; pointer-events: none;
+}
+@keyframes bubbleRise {
+  0%   { transform: translateY(0) scale(1); opacity: 0.6; }
+  80%  { opacity: 0.3; }
+  100% { transform: translateY(-110px) scale(0.6); opacity: 0; }
+}
+
+/* Glow when active */
+.liquid-tank.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 2px 12px rgba(0,0,0,0.3), 0 0 16px rgba(59,130,246,0.35), var(--shadow-sm);
+}
+
+/* Tick marks on right edge of narrow bar */
+.liquid-ticks {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 18px; z-index: 4; pointer-events: none;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 5px 0;
+}
+.liquid-tick {
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 3px;
+}
+.liquid-tick span { font-size: 7px; color: var(--muted); font-weight: 600; line-height: 1; }
+.liquid-tick::before {
+  content: ''; width: 4px; height: 1px;
+  background: var(--border2); margin-right: 2px;
+}
+
+/* Right side — pct number + bubble playground */
+.liquid-right {
+  flex: 1; position: relative;
+  border-radius: 14px; overflow: hidden;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+}
+.liquid-right.active { border-color: var(--accent); box-shadow: 0 0 16px rgba(59,130,246,0.2); }
+
+/* Floating bubbles in the right panel */
+.bubble-float {
+  position: absolute; border-radius: 50%;
+  border: 1.5px solid rgba(96,165,250,0.4);
+  background: rgba(59,130,246,0.08);
+  pointer-events: none;
+  animation: floatDrift ease-in-out infinite;
+}
+@keyframes floatDrift {
+  0%,100% { transform: translateY(0) translateX(0); }
+  33%      { transform: translateY(-8px) translateX(4px); }
+  66%      { transform: translateY(4px) translateX(-6px); }
+}
+
+.liquid-tank-pct {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 2; position: relative;
+}
+.liquid-tank-pct .pct-num {
+  font-size: 40px; font-weight: 800;
+  letter-spacing: -1.5px; line-height: 1;
+  color: var(--accent2);
+  text-shadow: 0 0 20px rgba(59,130,246,0.5);
+}
+.liquid-right.active .pct-num { color: var(--accent); }
+.liquid-tank-pct .pct-phase {
+  font-size: 10px; font-weight: 700;
+  color: var(--muted); letter-spacing: 1px;
+  text-transform: uppercase; margin-top: 4px;
+}
+
+.liquid-pct { display: none; }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
+.stat-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 6px; text-align: center;
+  transition: all 0.2s; min-width: 0;
+}
+.stat-val { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-lbl { font-size: 9px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.progress-info { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.phase-label { font-size: 12px; font-weight: 600; color: var(--text2); }
+.pct-label { font-size: 12px; font-weight: 700; color: var(--accent); }
+
+.progress-track {
+  background: var(--surface2); border-radius: 99px;
+  height: 8px; overflow: hidden; margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  width: 0%;
+}
+.progress-fill.indeterminate {
+  width: 40% !important;
+  animation: indeterminate 1.4s ease-in-out infinite;
+}
+@keyframes indeterminate { 0%{margin-left:-40%;} 100%{margin-left:110%;} }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 99px;
+  font-size: 12px; font-weight: 600; margin-bottom: 16px;
+  transition: all 0.3s;
+}
+.status-badge.downloading { background: var(--accentbg); color: var(--accent); }
+.status-badge.merging     { background: var(--yellowbg); color: var(--yellow); }
+.status-badge.done        { background: var(--greenbg);  color: var(--green); }
+.status-badge.error       { background: var(--redbg);    color: var(--red); }
+.status-badge.cancelled   { background: var(--yellowbg); color: var(--yellow); }
+.badge-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+  animation: badgePulse 1.5s ease infinite;
+}
+.status-badge.done .badge-dot,
+.status-badge.error .badge-dot,
+.status-badge.cancelled .badge-dot { animation: none; }
+@keyframes badgePulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.8);} }
+
+.dest-file {
+  font-size: 12px; color: var(--text2);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 14px;
+  word-break: break-all; display: none;
+}
+
+/* Log */
+.log-toggle {
+  background: none; border: 1.5px solid var(--border);
+  color: var(--text2); font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 500; padding: 7px 14px;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.log-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.log-console {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px; height: 180px;
+  overflow-y: auto; font-family: 'SF Mono','Fira Code',monospace;
+  font-size: 11px; line-height: 1.9; display: none;
+}
+.log-console.visible { display: block; }
+.log-line       { color: var(--muted); }
+.log-line.warn  { color: var(--yellow); }
+.log-line.err   { color: var(--red); }
+.log-line.info  { color: var(--green); font-weight: 600; }
+
+/* ── SUPPORTED SITES ── */
+.sites-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.sites-toggle-row .card-title { margin-bottom: 0; }
+.chevron { color: var(--text2); flex-shrink: 0; }
+.chevron.open { transform: rotate(180deg); }
+
+#sitesPanel { margin-top: 16px; }
+
+.site-tabs {
+  display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.site-tab {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text2); font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 500; padding: 5px 14px;
+  border-radius: 99px; cursor: pointer; transition: all 0.2s;
+}
+.site-tab:hover { border-color: var(--accent); color: var(--accent); }
+.site-tab.active {
+  background: var(--accentbg); border-color: var(--accent);
+  color: var(--accent); font-weight: 600;
+}
+
+.site-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.site-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 99px; padding: 5px 12px 5px 7px;
+  font-size: 12px; font-weight: 500; color: var(--text);
+  transition: all 0.15s cubic-bezier(0.34,1.56,0.64,1); cursor: default;
+}
+.site-pill:hover {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accentbg);
+  transform: scale(1.04);
+}
+.site-pill img {
+  width: 16px; height: 16px; border-radius: 4px; object-fit: contain;
+}
+.site-pill small { font-size: 10px; color: var(--muted); }
+
+.sites-more-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 14px; font-size: 12px; font-weight: 600;
+  color: var(--accent); text-decoration: none;
+  padding: 7px 14px; border-radius: 99px;
+  border: 1.5px solid rgba(59,130,246,0.25);
+  background: var(--accentbg);
+  transition: all 0.2s;
+}
+.sites-more-link:hover { background: rgba(59,130,246,0.18); transform: scale(1.03); }
+
+/* ── SPEED SPARKLINE ── */
+.sparkline-wrap {
+  margin-bottom: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px;
+}
+.sparkline-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.sparkline-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.sparkline-cur   { font-size: 12px; font-weight: 700; color: var(--accent2); }
+#sparklineCanvas { width: 100%; height: 40px; display: block; border-radius: 6px; }
+
+/* ── THUMBNAIL PREVIEW ── */
+.thumb-wrap {
+  display: none; margin-bottom: 14px;
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border);
+  position: relative; background: var(--surface2);
+}
+.thumb-wrap.visible { display: block; }
+.thumb-img {
+  width: 100%; max-height: 180px; object-fit: cover;
+  display: block;
+}
+.thumb-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%);
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 12px 14px;
+}
+.thumb-title  { font-size: 13px; font-weight: 600; color: white; line-height: 1.4; margin-bottom: 3px; }
+.thumb-channel{ font-size: 11px; color: rgba(255,255,255,0.65); }
+.thumb-badge  {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,0.6); color: white; font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px; backdrop-filter: blur(4px);
+}
+
+/* ── CLIPBOARD PASTE BTN ── */
+.url-row { display: flex; gap: 8px; align-items: center; }
+.url-row .url-input { flex: 1; }
+.btn-clipboard {
+  flex-shrink: 0; height: 46px; width: 46px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 12px; color: var(--text2); font-size: 18px;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-clipboard:hover {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accentbg); transform: scale(1.08);
+}
+.btn-clipboard.flash {
+  background: var(--greenbg); border-color: var(--green); color: var(--green);
+}
+
+/* ── DOWNLOAD HISTORY ── */
+.history-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 12px; transition: all 0.15s;
+  animation: bounceIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.history-item:hover { border-color: var(--border2); }
+.history-thumb {
+  width: 40px; height: 28px; border-radius: 6px;
+  object-fit: cover; flex-shrink: 0; background: var(--surface3);
+}
+.history-info { flex: 1; min-width: 0; }
+.history-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-meta  { color: var(--muted); font-size: 11px; margin-top: 2px; }
+.history-status {
+  flex-shrink: 0; font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 99px;
+}
+.history-status.done      { background: var(--greenbg); color: var(--green); }
+.history-status.error     { background: var(--redbg); color: var(--red); }
+.history-status.cancelled { background: var(--yellowbg); color: var(--yellow); }
+.history-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 16px 0; }
+
+/* ── ALREADY-EXISTS MODAL ── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeInBd 0.2s ease both;
+}
+@keyframes fadeInBd { from { opacity:0; } to { opacity:1; } }
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 28px 28px 24px;
+  max-width: 380px; width: calc(100% - 40px);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  animation: modalPop 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes modalPop {
+  from { opacity:0; transform: scale(0.92) translateY(12px); }
+  to   { opacity:1; transform: scale(1)    translateY(0); }
+}
+.modal-icon {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: var(--yellowbg); border: 1px solid rgba(251,191,36,0.25);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.modal-body  { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 8px; }
+.modal-file  {
+  font-size: 11px; color: var(--muted);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px;
+  word-break: break-all; margin-bottom: 20px;
+  font-family: 'SF Mono','Fira Code',monospace;
+}
+.modal-btns { display: flex; gap: 10px; }
+.modal-btn  {
+  flex: 1; padding: 11px; border-radius: 12px; border: none;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.modal-btn.cancel    { background: var(--surface2); color: var(--text2); border: 1.5px solid var(--border); }
+.modal-btn.cancel:hover { border-color: var(--border2); color: var(--text); transform: scale(1.02); }
+.modal-btn.redownload { background: var(--accent); color: white; box-shadow: 0 4px 14px rgba(59,130,246,0.35); }
+.modal-btn.redownload:hover { background: var(--accent2); transform: translateY(-1px) scale(1.02); }
+
+.legal-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  margin-bottom: 10px; transition: all 0.2s;
+}
+.legal-item:hover { border-color: var(--border2); }
+.legal-icon { font-size: 18px; flex-shrink: 0; }
+.legal-item h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.legal-item p  { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.legal-footer {
+  margin-top: 12px; padding: 12px 16px;
+  background: var(--yellowbg); border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 12px; font-size: 12px; color: var(--text2);
+  line-height: 1.7; text-align: center;
+}
+.legal-footer strong { color: var(--yellow); }
+
+/* ── OVERLAY ── */
+#server-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+}
+.overlay-logo-img {
+  width: 72px; height: 72px; border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 0 0 4px var(--accentbg), var(--shadow);
+  animation: bounceIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.overlay-name {
+  font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.5px;
+}
+.overlay-name span { color: var(--accent); }
+#overlay-msg {
+  font-size: 13px; color: var(--text2); font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+}
+.overlay-track {
+  width: 240px; height: 4px;
+  background: var(--surface2); border-radius: 99px; overflow: hidden;
+}
+#overlay-bar {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px; transition: width 0.3s ease;
+}
+#overlay-error { display: none; text-align: center; }
+#overlay-error p { font-size: 13px; color: var(--text2); line-height: 1.8; margin-bottom: 14px; }
+#overlay-error span { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 520px) {
+  .options-grid { grid-template-columns: 1fr; }
+  .stats-grid   { grid-template-columns: repeat(4,1fr); gap: 5px; }
+  .stat-val     { font-size: 11px; }
+  .container    { padding: 50px 16px 60px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Aurora canvas -->
+<canvas id="aurora-canvas"></canvas>
+<!-- Characters canvas -->
+<canvas id="char-canvas"></canvas>
+
+<!-- Top-right button group -->
+<div class="top-btns">
+  <!-- Portfolio link -->
+  <button class="top-btn portfolio" onclick="openExtLink('https://portfoliojveco.vercel.app','My Portfolio')" title="View portfolio">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+    Portfolio
+  </button>
+  <!-- GitHub link -->
+  <a class="top-btn github" href="https://github.com/EcomineAI" target="_blank" title="EcomineAI on GitHub">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.004.07 1.532 1.032 1.532 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.026 2.747-1.026.546 1.378.202 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.848-2.338 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.579.688.481C19.138 20.2 22 16.447 22 12.021 22 6.484 17.523 2 12 2z"/>
+    </svg>
+    EcomineAI
+  </a>
+  <!-- Theme toggle -->
+  <button class="top-btn theme icon-only" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">
+    <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  </button>
+  <!-- Stop server -->
+  <button class="top-btn quit" onclick="quitServer()" title="Stop server">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="currentColor" stroke="none" opacity="0.15"/>
+      <rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/>
+    </svg>
+    Stop
+  </button>
+</div>
+
+<!-- legacy hidden stubs for JS compat -->
+<button class="theme-toggle" id="themeBtn2" style="display:none"></button>
+<button class="quit-btn" style="display:none"></button>
+
+<!-- Server overlay -->
+<div id="server-overlay">
+  <img src="logo.jpg" class="overlay-logo-img" alt="EcomineAI"/>
+  <div class="overlay-name">Ecomine<span>AI</span></div>
+  <div id="overlay-msg"><span class="scanning-spin"></span> Connecting to server...</div>
+  <div class="overlay-track"><div id="overlay-bar"></div></div>
+  <div id="overlay-error">
+    <p>Server not running.<br>Double-click <span>START.bat</span> then click retry.</p>
+    <button onclick="location.reload()" style="padding:10px 28px;background:var(--accent);border:none;border-radius:99px;color:white;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(59,130,246,0.4);">Retry</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-wrap">
+      <img src="logo.jpg" class="logo-img" alt="EcomineAI logo"/>
+      <div class="app-name">Ecomine<span>AI</span></div>
+    </div>
+    <div class="app-sub">Powered by yt-dlp</div>
+    <span class="version-badge">v0.1 · jv-ytdlp</span>
+  </header>
+
+  <!-- Card 1: URL Input -->
+  <div class="card">
+    <div class="card-title">Video URL</div>
+    <div class="input-wrap">
+      <div class="url-row">
+        <input class="url-input" id="videoUrl" type="text" placeholder="Paste YouTube or any supported URL..."/>
+        <button class="btn-clipboard" id="clipboardBtn" onclick="pasteFromClipboard()" title="Paste from clipboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2"/><path d="M9 12h6M9 16h4"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Thumbnail preview -->
+    <div class="thumb-wrap" id="thumbWrap">
+      <img class="thumb-img" id="thumbImg" src="" alt=""/>
+      <div class="thumb-overlay">
+        <div class="thumb-title" id="thumbTitle"></div>
+        <div class="thumb-channel" id="thumbChannel"></div>
+      </div>
+      <div class="thumb-badge" id="thumbBadge"></div>
+    </div>
+    <div class="quality-status" id="qualityStatus"></div>
+
+    <div class="options-grid">
+      <div class="option-group">
+        <div class="field-label">Quality</div>
+        <select id="quality" disabled>
+          <option value="">— Paste URL first —</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <div class="field-label">Save to folder</div>
+        <input type="text" id="outputPath" placeholder="C:\Users\You\Downloads"/>
+      </div>
+      <div class="option-group full">
+        <div class="field-label">Format</div>
+        <div class="toggle-row" id="audioToggleRow" onclick="toggleAudio()">
+          <div class="toggle" id="audioToggle"></div>
+          <div class="toggle-text">
+            <strong>Audio Only (MP3)</strong>
+            <small>Skip video — extract audio only</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="dlBtn" onclick="startDownload()" disabled>Download</button>
+      <button class="btn-cancel" id="cancelBtn" onclick="cancelDownload()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Card 2: Progress -->
+  <div class="card" id="progress-section">
+    <div class="card-title">Download Progress</div>
+
+    <div id="statusBadge" class="status-badge downloading">
+      <span class="badge-dot"></span>
+      <span id="statusText">Initializing...</span>
+    </div>
+
+    <div id="destFile" class="dest-file"></div>
+
+    <!-- Liquid Tank Progress -->
+    <div class="liquid-wrap">
+      <!-- Narrow liquid bar -->
+      <div class="liquid-tank" id="liquidTank">
+        <div class="liquid-fill" id="liquidFill"></div>
+        <div class="liquid-ticks">
+          <div class="liquid-tick"><span>100</span></div>
+          <div class="liquid-tick"><span>75</span></div>
+          <div class="liquid-tick"><span>50</span></div>
+          <div class="liquid-tick"><span>25</span></div>
+          <div class="liquid-tick"><span>0</span></div>
+        </div>
+      </div>
+      <!-- Right panel: drifting bubbles + percentage -->
+      <div class="liquid-right" id="liquidRight">
+        <!-- 5 static drifting bubbles -->
+        <div class="bubble-float" style="width:28px;height:28px;top:12px;left:14px;animation-duration:3.8s;animation-delay:0s;"></div>
+        <div class="bubble-float" style="width:18px;height:18px;top:50%;left:72%;animation-duration:5.2s;animation-delay:0.8s;"></div>
+        <div class="bubble-float" style="width:36px;height:36px;bottom:14px;left:8px;animation-duration:4.4s;animation-delay:1.4s;"></div>
+        <div class="bubble-float" style="width:14px;height:14px;top:30%;left:40%;animation-duration:6.1s;animation-delay:2.1s;"></div>
+        <div class="bubble-float" style="width:22px;height:22px;bottom:20px;right:12px;animation-duration:4.9s;animation-delay:0.4s;"></div>
+        <div class="liquid-tank-pct">
+          <span class="pct-num" id="liquidPct">0%</span>
+          <span class="pct-phase" id="liquidPhase">Ready</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Speed Sparkline -->
+    <div class="sparkline-wrap">
+      <div class="sparkline-header">
+        <span class="sparkline-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-right:4px;color:var(--accent)"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Download Speed</span>
+        <span class="sparkline-cur" id="sparklineCur">— MB/s</span>
+      </div>
+      <canvas id="sparklineCanvas" height="40"></canvas>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val" id="statPct">0%</div><div class="stat-lbl">Progress</div></div>
+      <div class="stat-box"><div class="stat-val" id="statSpeed">—</div><div class="stat-lbl">Speed</div></div>
+      <div class="stat-box"><div class="stat-val" id="statEta">—</div><div class="stat-lbl">ETA</div></div>
+      <div class="stat-box"><div class="stat-val" id="statFrag">—</div><div class="stat-lbl">Frags</div></div>
+    </div>
+
+    <div class="progress-info">
+      <span class="phase-label" id="phaseLabel">Starting...</span>
+      <span class="pct-label"   id="pctLabel">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <button class="log-toggle" onclick="toggleLog()">
+      <svg id="logIcon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <span id="logToggleText">Show logs</span>
+    </button>
+    <div class="log-console" id="logConsole"></div>
+  </div>
+
+  <!-- Card 3: Supported Sites -->
+  <div class="card">
+    <div class="sites-toggle-row" onclick="toggleSites()">
+      <div class="card-title">Supported Sites</div>
+      <svg class="chevron" id="sitesChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div id="sitesPanel" style="display:none">
+      <div class="site-tabs">
+        <button class="site-tab active" onclick="showCat('video',this)">Video</button>
+        <button class="site-tab" onclick="showCat('social',this)">Social</button>
+        <button class="site-tab" onclick="showCat('music',this)">Music</button>
+        <button class="site-tab" onclick="showCat('news',this)">News</button>
+        <button class="site-tab" onclick="showCat('edu',this)">Education</button>
+        <button class="site-tab" onclick="showCat('other',this)">Other</button>
+      </div>
+
+      <div class="site-pills" id="cat-video">
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=youtube.com&sz=32"/>YouTube</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=twitch.tv&sz=32"/>Twitch</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=vimeo.com&sz=32"/>Vimeo</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=dailymotion.com&sz=32"/>Dailymotion</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=rumble.com&sz=32"/>Rumble</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=bilibili.com&sz=32"/>Bilibili</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=nicovideo.jp&sz=32"/>Niconico</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=odysee.com&sz=32"/>Odysee</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=streamable.com&sz=32"/>Streamable</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=peertube.tv&sz=32"/>PeerTube</div>
+      </div>
+      <div class="site-pills" id="cat-social" style="display:none">
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=tiktok.com&sz=32"/>TikTok</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=instagram.com&sz=32"/>Instagram</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=x.com&sz=32"/>Twitter / X</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=facebook.com&sz=32"/>Facebook</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=reddit.com&sz=32"/>Reddit</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=snapchat.com&sz=32"/>Snapchat</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=pinterest.com&sz=32"/>Pinterest</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=threads.net&sz=32"/>Threads</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=vk.com&sz=32"/>VK</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=weibo.com&sz=32"/>Weibo</div>
+      </div>
+      <div class="site-pills" id="cat-music" style="display:none">
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=soundcloud.com&sz=32"/>SoundCloud</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=bandcamp.com&sz=32"/>Bandcamp</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=audiomack.com&sz=32"/>Audiomack</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=mixcloud.com&sz=32"/>Mixcloud</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=spotify.com&sz=32"/>Spotify <small>(podcasts)</small></div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=deezer.com&sz=32"/>Deezer <small>(previews)</small></div>
+      </div>
+      <div class="site-pills" id="cat-news" style="display:none">
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=bbc.com&sz=32"/>BBC</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=cnn.com&sz=32"/>CNN</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=aljazeera.com&sz=32"/>Al Jazeera</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=nbcnews.com&sz=32"/>NBC News</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=abcnews.go.com&sz=32"/>ABC News</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=theguardian.com&sz=32"/>The Guardian</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=bloomberg.com&sz=32"/>Bloomberg</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=vice.com&sz=32"/>Vice</div>
+      </div>
+      <div class="site-pills" id="cat-edu" style="display:none">
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=ted.com&sz=32"/>TED</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=khanacademy.org&sz=32"/>Khan Academy</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=coursera.org&sz=32"/>Coursera</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=udemy.com&sz=32"/>Udemy</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=linkedin.com&sz=32"/>LinkedIn Learning</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=ocw.mit.edu&sz=32"/>MIT OCW</div>
+      </div>
+      <div class="site-pills" id="cat-other" style="display:none">
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=crunchyroll.com&sz=32"/>Crunchyroll</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=espn.com&sz=32"/>ESPN</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=imgur.com&sz=32"/>Imgur</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=loom.com&sz=32"/>Loom</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=ok.ru&sz=32"/>OK.ru</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=coub.com&sz=32"/>Coub</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=gfycat.com&sz=32"/>Gfycat</div>
+        <div class="site-pill"><img src="https://www.google.com/s2/favicons?domain=funimation.com&sz=32"/>Funimation</div>
+      </div>
+
+      <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank" class="sites-more-link">
+        View all 1,800+ supported sites →
+      </a>
+    </div>
+  </div>
+
+  <!-- Card: Download History -->
+  <div class="card" id="historyCard" style="display:none;">
+    <div class="card-title">Download History</div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty">No downloads yet this session.</div>
+    </div>
+  </div>
+
+  <!-- Card 4: Legal -->
+  <div class="card">
+    <div class="card-title">Legal Disclaimer</div>
+    <div class="legal-item">
+      <div class="legal-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      <div><h4>No copyrighted content without permission</h4><p>Movies, TV shows, music, and paid courses are protected. Downloading without authorization may be illegal.</p></div>
+    </div>
+    <div class="legal-item">
+      <div class="legal-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      <div><h4>No redistribution of downloaded content</h4><p>Re-uploading, sharing, or selling downloaded videos you don't own is copyright infringement.</p></div>
+    </div>
+    <div class="legal-item">
+      <div class="legal-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      <div><h4>No commercial use</h4><p>Using downloaded content to generate revenue without the rights holder's consent is illegal.</p></div>
+    </div>
+    <div class="legal-item">
+      <div class="legal-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div><h4>Personal use only</h4><p>Only download content you own, have permission to download, or content under Creative Commons / public domain license.</p></div>
+    </div>
+    <div class="legal-footer">
+      By using jv-ytdlp you agree that <strong>JV / EcomineAI is not responsible</strong> for how you use this tool.
+      This software is provided for <strong>personal and educational use only</strong>.
+    </div>
+  </div>
+
+</div><!-- end container -->
+
+<script>
+// ── AURORA BACKGROUND ──
+(function() {
+  const canvas = document.getElementById('aurora-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, blobs;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function makeBlob() {
+    return {
+      x:  Math.random() * W,
+      y:  Math.random() * H,
+      rx: 200 + Math.random() * 320,
+      ry: 140 + Math.random() * 220,
+      vx: (Math.random() - 0.5) * 0.28,
+      vy: (Math.random() - 0.5) * 0.18,
+      hue: 200 + Math.random() * 40,   // blue-cyan range
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.0004 + Math.random() * 0.0006,
+    };
+  }
+
+  function initBlobs() {
+    blobs = Array.from({ length: 5 }, makeBlob);
+  }
+
+  function draw(ts) {
+    ctx.clearRect(0, 0, W, H);
+    blobs.forEach(b => {
+      b.phase += b.speed;
+      b.x += b.vx + Math.sin(b.phase) * 0.4;
+      b.y += b.vy + Math.cos(b.phase * 0.7) * 0.3;
+      // wrap
+      if (b.x < -b.rx) b.x = W + b.rx;
+      if (b.x > W + b.rx) b.x = -b.rx;
+      if (b.y < -b.ry) b.y = H + b.ry;
+      if (b.y > H + b.ry) b.y = -b.ry;
+
+      const alpha = 0.13 + 0.07 * Math.sin(b.phase * 1.3);
+      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, Math.max(b.rx, b.ry));
+      grad.addColorStop(0,   `hsla(${b.hue},80%,62%,${alpha})`);
+      grad.addColorStop(0.5, `hsla(${b.hue+15},70%,55%,${alpha * 0.5})`);
+      grad.addColorStop(1,   `hsla(${b.hue+30},60%,45%,0)`);
+
+      ctx.save();
+      ctx.scale(1, b.ry / b.rx);
+      ctx.beginPath();
+      ctx.arc(b.x, b.y * (b.rx / b.ry), b.rx, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  resize(); initBlobs(); requestAnimationFrame(draw);
+})();
+
+// ── CHARACTER PHYSICS ──
+(function() {
+  const canvas = document.getElementById('char-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const SIZE = 64; // character size px
+  const GROUND_MARGIN = 80; // distance from bottom
+  const GRAVITY = 0.45;
+  const BOUNCE = 0.55;
+  const FRICTION = 0.88;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Load images
+  const CHARS = [
+    { src: 'char-cool.jpg',  name: 'cool',  scale: 1.2  },  // main — slightly bigger
+    { src: 'char-happy.jpg', name: 'happy', scale: 1.0  },
+    { src: 'char-sad.jpg',   name: 'sad',   scale: 0.95 },
+    { src: 'char-angry.jpg', name: 'angry', scale: 0.9  },
+  ];
+
+  const imgs = {};
+  let loaded = 0;
+  CHARS.forEach(c => {
+    const img = new Image();
+    img.src = c.src;
+    img.onload = () => { loaded++; };
+    imgs[c.name] = { img, scale: c.scale };
+  });
+
+  // Personalities
+  const personalities = {
+    cool:  { speedMult: 0.8, jumpChance: 0.008, jumpForce: -10, flipOnDir: true,  idleChance: 0.004 },
+    happy: { speedMult: 1.3, jumpChance: 0.020, jumpForce: -13, flipOnDir: true,  idleChance: 0.002 },
+    sad:   { speedMult: 0.5, jumpChance: 0.003, jumpForce: -7,  flipOnDir: false, idleChance: 0.010 },
+    angry: { speedMult: 1.5, jumpChance: 0.012, jumpForce: -11, flipOnDir: true,  idleChance: 0.001 },
+  };
+
+  function makeChar(type, startX) {
+    const p = personalities[type];
+    const groundY = H - GROUND_MARGIN - SIZE * imgs[type].scale;
+    return {
+      type,
+      x: startX || Math.random() * (W - SIZE),
+      y: H - GROUND_MARGIN - SIZE,
+      vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 2) * p.speedMult,
+      vy: 0,
+      grounded: true,
+      idle: false,
+      idleTimer: 0,
+      squishY: 1,
+      squishX: 1,
+      wobble: 0,
+      facingRight: true,
+      p,
+      groundY,
+      opacity: 0.82,
+      shadow: 8,
+    };
+  }
+
+  // Spawn 3 characters — cool always included
+  let chars = [
+    makeChar('cool',  W * 0.2),
+    makeChar('happy', W * 0.5),
+    makeChar('angry', W * 0.75),
+  ];
+
+  // Occasionally swap sad in
+  setInterval(() => {
+    const idx = Math.floor(Math.random() * chars.length);
+    if (chars[idx].type !== 'cool') {
+      const types = ['happy', 'sad', 'angry'];
+      chars[idx] = makeChar(types[Math.floor(Math.random() * types.length)], chars[idx].x);
+    }
+  }, 12000);
+
+  function update() {
+    const ground = H - GROUND_MARGIN;
+
+    chars.forEach(c => {
+      const p = c.p;
+      const imgData = imgs[c.type];
+      const sz = SIZE * imgData.scale;
+
+      // Idle behavior
+      if (c.grounded && !c.idle && Math.random() < p.idleChance) {
+        c.idle = true;
+        c.idleTimer = 60 + Math.floor(Math.random() * 90);
+        c.vx *= 0.1;
+      }
+      if (c.idle) {
+        c.idleTimer--;
+        c.wobble = Math.sin(Date.now() * 0.008) * 3;
+        if (c.idleTimer <= 0) {
+          c.idle = false;
+          c.wobble = 0;
+          c.vx = (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 2) * p.speedMult;
+        }
+      }
+
+      // Apply gravity
+      if (!c.grounded) c.vy += GRAVITY;
+
+      // Move
+      if (!c.idle) {
+        c.x += c.vx;
+        c.facingRight = c.vx > 0;
+      }
+      c.y += c.vy;
+
+      // Ground collision
+      if (c.y + sz >= ground) {
+        c.y = ground - sz;
+        if (Math.abs(c.vy) > 1) {
+          // Squish on landing
+          c.squishX = 1.25;
+          c.squishY = 0.75;
+        }
+        c.vy = -Math.abs(c.vy) * BOUNCE;
+        c.vx *= FRICTION;
+        if (Math.abs(c.vy) < 1.5) { c.vy = 0; c.grounded = true; }
+        else c.grounded = false;
+      } else {
+        c.grounded = false;
+      }
+
+      // Wall bounce
+      if (c.x < 0) {
+        c.x = 0; c.vx = Math.abs(c.vx) * 0.9;
+        c.squishX = 0.75; c.squishY = 1.2;
+      }
+      if (c.x + sz > W) {
+        c.x = W - sz; c.vx = -Math.abs(c.vx) * 0.9;
+        c.squishX = 0.75; c.squishY = 1.2;
+      }
+
+      // Random jump
+      if (c.grounded && Math.random() < p.jumpChance) {
+        c.vy = p.jumpForce * (0.85 + Math.random() * 0.3);
+        c.grounded = false;
+        c.squishX = 0.8; c.squishY = 1.3;
+      }
+
+      // Spring squish back
+      c.squishX += (1 - c.squishX) * 0.18;
+      c.squishY += (1 - c.squishY) * 0.18;
+
+      // Running bob — slight vertical oscillation when moving on ground
+      if (c.grounded && !c.idle && Math.abs(c.vx) > 0.5) {
+        c.y += Math.sin(Date.now() * 0.015 * Math.abs(c.vx)) * 1.5;
+      }
+    });
+
+    // Character collisions (simple circle)
+    for (let i = 0; i < chars.length; i++) {
+      for (let j = i+1; j < chars.length; j++) {
+        const a = chars[i], b = chars[j];
+        const szA = SIZE * imgs[a.type].scale;
+        const szB = SIZE * imgs[b.type].scale;
+        const cx1 = a.x + szA/2, cy1 = a.y + szA/2;
+        const cx2 = b.x + szB/2, cy2 = b.y + szB/2;
+        const dist = Math.hypot(cx2-cx1, cy2-cy1);
+        const minDist = (szA + szB) / 2 * 0.8;
+        if (dist < minDist && dist > 0) {
+          const nx = (cx2-cx1)/dist, ny = (cy2-cy1)/dist;
+          const rel = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+          if (rel > 0) {
+            a.vx -= rel * nx * 0.6; a.vy -= rel * ny * 0.4;
+            b.vx += rel * nx * 0.6; b.vy += rel * ny * 0.4;
+            a.squishX = 0.8; a.squishY = 1.2;
+            b.squishX = 0.8; b.squishY = 1.2;
+          }
+        }
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    if (loaded === 0) return;
+
+    chars.forEach(c => {
+      const imgData = imgs[c.type];
+      const sz = SIZE * imgData.scale;
+      const cx = c.x + sz/2;
+      const cy = c.y + sz/2;
+
+      ctx.save();
+      ctx.globalAlpha = c.opacity;
+
+      // Shadow
+      ctx.beginPath();
+      ctx.ellipse(cx, H - GROUND_MARGIN + 4, sz * 0.35 * c.squishX, 5, 0, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fill();
+
+      // Draw character with squish + flip
+      ctx.translate(cx, cy + (c.idle ? Math.sin(Date.now()*0.006)*3 : 0) + (c.wobble || 0));
+      ctx.scale(
+        (c.facingRight ? 1 : -1) * c.squishX,
+        c.squishY
+      );
+      ctx.rotate(c.idle ? Math.sin(Date.now()*0.004)*0.08 : 0);
+
+      // Round clip for character
+      ctx.beginPath();
+      ctx.arc(0, 0, sz/2, 0, Math.PI*2);
+      ctx.clip();
+      ctx.drawImage(imgData.img, -sz/2, -sz/2, sz, sz);
+
+      ctx.restore();
+    });
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // Wait for at least one image then start
+  const waitStart = setInterval(() => {
+    if (loaded > 0) { clearInterval(waitStart); loop(); }
+  }, 100);
+})();
+
+// ── OPEN FOLDER ──
+async function openFolder() {
+  const p = document.getElementById('outputPath').value.trim();
+  try {
+    await fetch('/open-folder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: p })
+    });
+  } catch {}
+}
+
+// ── QUIT SERVER ──
+async function quitServer() {
+  if (!confirm('Stop the jv-ytdlp server?\n\nThe app will no longer work until you run START.bat again.')) return;
+  try {
+    await fetch('/quit', { method:'POST' });
+  } catch {}
+  document.body.innerHTML = `
+    <div style="position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:'Inter',sans-serif;">
+      <img src="logo.jpg" style="width:64px;height:64px;border-radius:16px;object-fit:cover;opacity:0.5;"/>
+      <div style="font-size:18px;font-weight:700;color:var(--text2);">Server stopped</div>
+      <div style="font-size:13px;color:var(--muted);">Run START.bat to restart</div>
+    </div>`;
+}
+
+// ── EXTERNAL LINK CONFIRM ──
+function openExtLink(href, label) {
+  const existing = document.getElementById('extPopup');
+  if (existing) existing.remove();
+
+  const el = document.createElement('div');
+  el.className = 'ext-popup';
+  el.id = 'extPopup';
+  el.innerHTML = `
+    <div class="ext-popup-box">
+      <div class="ext-popup-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </div>
+      <div class="ext-popup-title">Opening external link</div>
+      <div class="ext-popup-url">${href}</div>
+      <div class="ext-popup-btns">
+        <button class="ext-popup-btn cancel" onclick="closeExtPopup()">Cancel</button>
+        <button class="ext-popup-btn go" onclick="confirmExtLink('${href}')">Open →</button>
+      </div>
+    </div>
+  `;
+  el.addEventListener('click', e => { if (e.target === el) closeExtPopup(); });
+  document.body.appendChild(el);
+}
+
+function closeExtPopup() {
+  const el = document.getElementById('extPopup');
+  if (!el) return;
+  el.style.animation = 'fadeInBd 0.15s ease reverse forwards';
+  setTimeout(() => el.remove(), 150);
+}
+
+function confirmExtLink(href) {
+  closeExtPopup();
+  setTimeout(() => window.open(href, '_blank', 'noopener,noreferrer'), 160);
+}
+
+// ── THEME ──
+const MOON_SVG = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+const SUN_SVG  = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  const icon = document.getElementById('themeIcon');
+  if (icon) icon.innerHTML = t === 'dark' ? MOON_SVG : SUN_SVG;
+}
+function toggleTheme() {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', t);
+  applyTheme(t);
+}
+applyTheme(localStorage.getItem('theme') || 'dark');
+
+// ── SERVER OVERLAY ──
+async function checkServer() {
+  const bar = document.getElementById('overlay-bar');
+  const msg = document.getElementById('overlay-msg');
+  let pct = 0;
+  const tick = setInterval(() => { pct = Math.min(pct+7, 85); bar.style.width = pct+'%'; }, 100);
+  for (let i = 1; i <= 10; i++) {
+    try {
+      const r = await fetch('http://localhost:3000/', { method:'HEAD', cache:'no-store' });
+      if (r.status < 500) {
+        clearInterval(tick); bar.style.width = '100%';
+        msg.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><polyline points="20 6 9 17 4 12"/></svg> Connected!';
+        await new Promise(r => setTimeout(r, 400));
+        const ov = document.getElementById('server-overlay');
+        ov.style.transition = 'opacity 0.4s';
+        ov.style.opacity = '0';
+        setTimeout(() => ov.remove(), 400);
+        return;
+      }
+    } catch {}
+    msg.innerHTML = `<span class="scanning-spin"></span> Connecting... (${i}/10)`;
+    await new Promise(r => setTimeout(r, 700));
+  }
+  clearInterval(tick); bar.style.width='100%'; bar.style.background='var(--red)';
+  msg.style.display='none';
+  document.getElementById('overlay-error').style.display='block';
+}
+window.addEventListener('load', checkServer);
+window.addEventListener('load', () => setTimeout(resizeSparkline, 100));
+
+// ── STATE ──
+let audioOnly=false, logVisible=false, eventSource=null, currentSessionId=null, fetchTimer=null, qualityFetched=false;
+let speedHistory = []; // for sparkline
+let downloadHistory = []; // session download log
+let currentThumbUrl = ''; // thumbnail for current download
+let currentTitle = ''; // video title
+
+// ── SPARKLINE ──
+const sparkCanvas = document.getElementById('sparklineCanvas');
+const sparkCtx = sparkCanvas.getContext('2d');
+const MAX_SPARK = 60;
+
+function resizeSparkline() {
+  const wrap = sparkCanvas.parentElement;
+  if (!wrap) return;
+  const W = wrap.clientWidth - 28;
+  const H = 40;
+  sparkCanvas.width  = W;
+  sparkCanvas.height = H;
+  sparkCanvas.style.width  = W + 'px';
+  sparkCanvas.style.height = H + 'px';
+  drawSparkline();
+}
+window.addEventListener('resize', resizeSparkline);
+
+function drawSparkline() {
+  const W = sparkCanvas.width;
+  const H = sparkCanvas.height;
+  if (!W || !H) return;
+  sparkCtx.clearRect(0, 0, W, H);
+  if (speedHistory.length < 2) return;
+  const max = Math.max(...speedHistory, 0.1);
+  const count = speedHistory.length;
+  const pts = speedHistory.map((v, i) => ({
+    x: (i / (MAX_SPARK - 1)) * W,
+    y: H - 2 - (v / max) * (H - 8)
+  }));
+  // Fill under curve
+  const grad = sparkCtx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(59,130,246,0.4)');
+  grad.addColorStop(1, 'rgba(59,130,246,0.03)');
+  sparkCtx.beginPath();
+  sparkCtx.moveTo(pts[0].x, H);
+  sparkCtx.lineTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) {
+    const cp = { x: (pts[i-1].x + pts[i].x) / 2, y: (pts[i-1].y + pts[i].y) / 2 };
+    sparkCtx.quadraticCurveTo(pts[i-1].x, pts[i-1].y, cp.x, cp.y);
+  }
+  sparkCtx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+  sparkCtx.lineTo(pts[pts.length-1].x, H);
+  sparkCtx.closePath();
+  sparkCtx.fillStyle = grad;
+  sparkCtx.fill();
+  // Stroke line
+  sparkCtx.beginPath();
+  sparkCtx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) {
+    const cp = { x: (pts[i-1].x + pts[i].x) / 2, y: (pts[i-1].y + pts[i].y) / 2 };
+    sparkCtx.quadraticCurveTo(pts[i-1].x, pts[i-1].y, cp.x, cp.y);
+  }
+  sparkCtx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+  sparkCtx.strokeStyle = 'rgba(96,165,250,0.95)';
+  sparkCtx.lineWidth = 1.5;
+  sparkCtx.lineJoin = 'round';
+  sparkCtx.stroke();
+  // Live dot at end
+  const last = pts[pts.length - 1];
+  sparkCtx.beginPath();
+  sparkCtx.arc(last.x, last.y, 3.5, 0, Math.PI * 2);
+  sparkCtx.fillStyle = '#93c5fd';
+  sparkCtx.fill();
+  sparkCtx.beginPath();
+  sparkCtx.arc(last.x, last.y, 2, 0, Math.PI * 2);
+  sparkCtx.fillStyle = '#3b82f6';
+  sparkCtx.fill();
+}
+
+function pushSpeed(rawSpeed) {
+  if (!rawSpeed || rawSpeed === '—') { speedHistory.push(0); }
+  else {
+    // parse MB/s or MiB/s or KiB/s
+    const mb = rawSpeed.match(/^([\d.]+)\s*MiB\/s$/i);
+    const kb = rawSpeed.match(/^([\d.]+)\s*KiB\/s$/i);
+    const mg = rawSpeed.match(/^([\d.]+)\s*MB\/s$/i);
+    if (mb) speedHistory.push(parseFloat(mb[1]));
+    else if (mg) speedHistory.push(parseFloat(mg[1]));
+    else if (kb) speedHistory.push(parseFloat(kb[1])/1024);
+    else speedHistory.push(0);
+  }
+  if (speedHistory.length > MAX_SPARK) speedHistory.shift();
+  drawSparkline();
+  const cur = speedHistory[speedHistory.length-1];
+  document.getElementById('sparklineCur').textContent = cur > 0 ? cur.toFixed(2)+' MB/s' : '—';
+}
+
+// ── BUBBLES IN TANK ──
+function spawnBubble() {
+  const tank = document.getElementById('liquidTank');
+  const fill = document.getElementById('liquidFill');
+  const fillH = parseFloat(fill.style.height) || 0;
+  if (fillH < 5) return;
+  const b = document.createElement('div');
+  b.className = 'liquid-bubble';
+  const sz = 2 + Math.random() * 4; // tiny: 2–6px
+  b.style.cssText = `
+    width:${sz}px; height:${sz}px;
+    left:${15 + Math.random() * 60}%;
+    bottom:${Math.random() * Math.min(fillH * 0.85, 70)}%;
+    animation-duration:${1.2 + Math.random() * 1.5}s;
+    animation-delay:0s;
+  `;
+  tank.appendChild(b);
+  setTimeout(() => b.remove(), 2800);
+}
+let bubbleInterval = null;
+
+// ── HISTORY ──
+function addHistory(entry) {
+  downloadHistory.unshift(entry); // newest first
+  const card = document.getElementById('historyCard');
+  const list = document.getElementById('historyList');
+  card.style.display = 'block';
+  list.innerHTML = '';
+  downloadHistory.slice(0, 8).forEach(h => {
+    const el = document.createElement('div');
+    el.className = 'history-item';
+    const thumbSrc = h.thumb || '';
+    el.innerHTML = `
+      ${thumbSrc ? `<img class="history-thumb" src="${thumbSrc}" alt="" onerror="this.style.display='none'"/>` : `<div class="history-thumb" style="display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${h.status==='done'?'#34d399':h.status==='error'?'#f87171':'#fbbf24'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${h.status==='done'?'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>':h.status==='error'?'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>':'<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'}</svg></div>`}
+      <div class="history-info">
+        <div class="history-title">${h.title || h.url || 'Unknown'}</div>
+        <div class="history-meta">${h.quality || 'best'} · ${h.time}</div>
+      </div>
+      <span class="history-status ${h.status}">${h.status==='done'?'Done':h.status==='error'?'Error':'Cancelled'}</span>
+    `;
+    list.appendChild(el);
+  });
+}
+
+// ── CLIPBOARD PASTE ──
+async function pasteFromClipboard() {
+  const btn = document.getElementById('clipboardBtn');
+  const CLIP_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2"/><path d="M9 12h6M9 16h4"/></svg>`;
+  const CHECK_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const ERR_SVG   = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+  try {
+    const text = await navigator.clipboard.readText();
+    const input = document.getElementById('videoUrl');
+    input.value = text.trim();
+    btn.innerHTML = CHECK_SVG;
+    btn.classList.add('flash');
+    setTimeout(() => { btn.classList.remove('flash'); btn.innerHTML = CLIP_SVG; }, 1200);
+    input.dispatchEvent(new Event('input'));
+  } catch {
+    btn.innerHTML = ERR_SVG;
+    setTimeout(() => btn.innerHTML = CLIP_SVG, 1200);
+  }
+}
+
+// ── YOUTUBE THUMBNAIL ──
+function extractYtId(url) {
+  const m = url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+function showThumbnail(url) {
+  const vid = extractYtId(url);
+  const wrap = document.getElementById('thumbWrap');
+  if (!vid) { wrap.classList.remove('visible'); return; }
+  const img  = document.getElementById('thumbImg');
+  const t    = document.getElementById('thumbTitle');
+  const ch   = document.getElementById('thumbChannel');
+  const badge= document.getElementById('thumbBadge');
+  currentThumbUrl = `https://img.youtube.com/vi/${vid}/mqdefault.jpg`;
+  img.src = currentThumbUrl;
+  img.onerror = () => wrap.classList.remove('visible');
+  img.onload  = () => wrap.classList.add('visible');
+  t.textContent = ''; ch.textContent = ''; badge.textContent = '';
+  // Try oEmbed for title
+  fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`)
+    .then(r => r.json())
+    .then(d => {
+      currentTitle = d.title || '';
+      t.textContent   = d.title   || '';
+      ch.textContent  = d.author_name || '';
+      badge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><polygon points="5 3 19 12 5 21 5 3"/></svg> YouTube`;
+    }).catch(() => { badge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><polygon points="5 3 19 12 5 21 5 3"/></svg> YouTube`; });
+}
+
+// ── URL INPUT → fetch qualities + thumbnail ──
+document.getElementById('videoUrl').addEventListener('input', function() {
+  clearTimeout(fetchTimer);
+  const val = this.value.trim();
+  if (!val) { resetQuality(); document.getElementById('thumbWrap').classList.remove('visible'); return; }
+  showThumbnail(val);
+  fetchTimer = setTimeout(() => fetchQualities(val), 900);
+});
+
+function resetQuality() {
+  const sel = document.getElementById('quality');
+  sel.innerHTML = '<option value="">— Paste URL first —</option>';
+  sel.disabled = true;
+  setQualityStatus('', '');
+  document.getElementById('dlBtn').disabled = true;
+  qualityFetched = false;
+}
+
+function setQualityStatus(type, msg) {
+  const el = document.getElementById('qualityStatus');
+  el.className = 'quality-status' + (type ? ' '+type : '');
+  el.innerHTML = msg;
+}
+
+async function fetchQualities(videoUrl) {
+  const sel = document.getElementById('quality');
+  sel.innerHTML = '<option>Scanning...</option>';
+  sel.disabled = true;
+  document.getElementById('dlBtn').disabled = true;
+  setQualityStatus('scanning', '<span class="scanning-spin"></span> Fetching available qualities...');
+  try {
+    const res = await fetch('/formats', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({videoUrl}) });
+    const data = await res.json();
+    sel.innerHTML = '';
+    if (data.qualities && data.qualities.length > 0) {
+      const labels = {2160:'4K — 2160p',1440:'QHD — 1440p',1080:'FHD — 1080p',720:'HD — 720p',480:'SD — 480p',360:'360p',240:'240p',144:'144p'};
+      // Approx MB per minute at each resolution (avg bitrate estimate)
+      const sizeMBpm = {2160:200,1440:100,1080:50,720:25,480:12,360:7,240:4,144:2};
+      data.qualities.forEach((h,i) => {
+        const o = document.createElement('option');
+        o.value = h;
+        const sz = sizeMBpm[h];
+        const szNote = sz ? ` · ~${sz>=1000?(sz/1000).toFixed(1)+'GB':sz+'MB'}/min` : '';
+        o.textContent = (labels[h]||h+'p') + szNote;
+        if (i===0) o.selected=true;
+        sel.appendChild(o);
+      });
+      const best = document.createElement('option');
+      best.value='best'; best.textContent='Best Available';
+      sel.appendChild(best);
+      sel.disabled = false;
+      setQualityStatus('ready', `✓ ${data.qualities.length} qualities found: ${data.qualities.map(h=>h+'p').join(', ')}`);
+      document.getElementById('dlBtn').disabled = false;
+      qualityFetched = true;
+    } else {
+      sel.innerHTML = '<option value="best">Best Available</option>';
+      sel.disabled = false;
+      setQualityStatus('err', '⚠ Could not detect qualities — using best available');
+      document.getElementById('dlBtn').disabled = false;
+    }
+  } catch {
+    sel.innerHTML = '<option value="best">Best Available</option>';
+    sel.disabled = false;
+    setQualityStatus('err', '⚠ Scan failed — using best available');
+    document.getElementById('dlBtn').disabled = false;
+  }
+}
+
+// ── AUDIO TOGGLE ──
+function toggleAudio() {
+  audioOnly = !audioOnly;
+  document.getElementById('audioToggle').classList.toggle('on', audioOnly);
+  document.getElementById('audioToggleRow').classList.toggle('on', audioOnly);
+  document.getElementById('quality').disabled = audioOnly || !qualityFetched;
+  document.getElementById('quality').style.opacity = audioOnly ? '0.4' : '1';
+}
+
+// ── SITES PANEL ──
+function toggleSites() {
+  const panel = document.getElementById('sitesPanel');
+  const ch = document.getElementById('sitesChevron');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  ch.classList.toggle('open', open);
+}
+function showCat(cat, btn) {
+  document.querySelectorAll('.site-pills').forEach(el => el.style.display='none');
+  document.querySelectorAll('.site-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('cat-'+cat).style.display='flex';
+  btn.classList.add('active');
+}
+
+// ── LOG ──
+function toggleLog() {
+  logVisible = !logVisible;
+  document.getElementById('logConsole').classList.toggle('visible', logVisible);
+  const icon = document.getElementById('logIcon');
+  const txt  = document.getElementById('logToggleText');
+  if (icon) icon.innerHTML = logVisible
+    ? '<polyline points="18 15 12 9 6 15"/>'
+    : '<polyline points="9 18 15 12 9 6"/>';
+  if (txt) txt.textContent = logVisible ? 'Hide logs' : 'Show logs';
+}
+function addLog(msg, type='') {
+  const con = document.getElementById('logConsole');
+  const line = document.createElement('div');
+  line.className = 'log-line'+( type ? ' '+type : '');
+  line.textContent = '> '+msg;
+  con.appendChild(line);
+  con.scrollTop = con.scrollHeight;
+}
+
+// ── STATUS ──
+function setStatus(type, text) {
+  const b = document.getElementById('statusBadge');
+  b.className = 'status-badge '+type;
+  document.getElementById('statusText').textContent = text;
+}
+
+// ── SPEED FORMAT ──
+function fmtSpeed(s) {
+  if (!s) return '—';
+  const k = s.match(/^([\d.]+)\s*KiB\/s$/i);
+  if (k) return (parseFloat(k[1])/1024).toFixed(2)+' MB/s';
+  return s;
+}
+
+// ── PROGRESS UPDATE ──
+function updateProgress(data) {
+  const pct = data.percent || 0;
+  const bar = document.getElementById('progressBar');
+  bar.classList.remove('indeterminate');
+  bar.style.width = pct+'%';
+
+  // Big liquid tank fill
+  const fill = document.getElementById('liquidFill');
+  fill.style.height = pct+'%';
+  document.getElementById('liquidTank').classList.add('active');
+  document.getElementById('liquidRight').classList.add('active');
+  document.getElementById('liquidPct').textContent = pct.toFixed(1)+'%';
+  document.getElementById('liquidPhase').textContent =
+    data.phase==='audio' ? 'Audio' : data.fragTotal ? `Frag ${data.fragCurrent}/${data.fragTotal}` : 'Video';
+
+  document.getElementById('statPct').textContent   = pct.toFixed(1)+'%';
+  document.getElementById('pctLabel').textContent  = pct.toFixed(1)+'%';
+  document.getElementById('statSpeed').textContent = fmtSpeed(data.speed);
+  document.getElementById('statEta').textContent   = data.eta || '—';
+  document.getElementById('statFrag').textContent  = data.fragTotal ? `${data.fragCurrent}/${data.fragTotal}` : (data.size||'—');
+  document.getElementById('phaseLabel').textContent = data.phase==='audio' ? 'Downloading audio' : data.fragTotal ? `Video frag ${data.fragCurrent}/${data.fragTotal}` : 'Downloading video';
+
+  // Sparkline
+  pushSpeed(data.speed);
+}
+
+function setDownloading(active) {
+  document.getElementById('dlBtn').disabled = active;
+  document.getElementById('cancelBtn').classList.toggle('visible', active);
+}
+
+// ── CANCEL ──
+async function cancelDownload() {
+  if (!currentSessionId) return;
+  try { await fetch('/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:currentSessionId})}); } catch{}
+  if (eventSource) { eventSource.close(); eventSource=null; }
+  if (bubbleInterval) { clearInterval(bubbleInterval); bubbleInterval=null; }
+  setStatus('cancelled','Cancelled');
+  setDownloading(false);
+  document.getElementById('phaseLabel').textContent='Cancelled';
+  document.getElementById('liquidPhase').textContent='Cancelled';
+  document.getElementById('progressBar').classList.remove('indeterminate');
+  document.getElementById('liquidTank').classList.remove('active');
+}
+
+// ── ALREADY EXISTS MODAL ──
+function showAlreadyExistsModal(filename, params) {
+  // Remove any existing modal
+  const existing = document.getElementById('alreadyExistsModal');
+  if (existing) existing.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'alreadyExistsModal';
+
+  const shortName = filename.split(/[\\/]/).pop() || filename;
+
+  backdrop.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="modal-title">Already downloaded</div>
+      <div class="modal-body">This file already exists in your save folder. What would you like to do?</div>
+      <div class="modal-file">${shortName}</div>
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeModal()">Keep existing</button>
+        <button class="modal-btn redownload" onclick="reDownload()">Download again</button>
+      </div>
+    </div>
+  `;
+
+  // Store params for re-download
+  backdrop._params = params;
+  document.body.appendChild(backdrop);
+
+  // Close on backdrop click
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+}
+
+function closeModal() {
+  const m = document.getElementById('alreadyExistsModal');
+  if (m) {
+    m.style.animation = 'fadeInBd 0.15s ease reverse forwards';
+    setTimeout(() => m.remove(), 150);
+  }
+}
+
+function reDownload() {
+  const m = document.getElementById('alreadyExistsModal');
+  if (!m) return;
+  const p = m._params;
+  closeModal();
+  // Fill URL field back and trigger a force download
+  document.getElementById('videoUrl').value = p.videoUrl;
+  document.getElementById('outputPath').value = p.outputPath || '';
+  // Small delay so modal animates out first
+  setTimeout(() => startDownload(true), 200);
+}
+
+async function startDownload(forceOverwrite = false) {
+  const videoUrl = document.getElementById('videoUrl').value.trim();
+  if (!videoUrl) { alert('Paste a URL first!'); return; }
+  const quality    = document.getElementById('quality').value || 'best';
+  const outputPath = document.getElementById('outputPath').value.trim();
+  currentSessionId = 'sess_'+Date.now();
+
+  document.getElementById('progress-section').classList.add('visible');
+  const bar  = document.getElementById('progressBar');
+  const fill = document.getElementById('liquidFill');
+  bar.style.width='0%'; bar.classList.remove('indeterminate');
+  fill.style.height='0%';
+  document.getElementById('liquidTank').classList.remove('active');
+  document.getElementById('liquidRight').classList.remove('active');
+  document.getElementById('liquidPhase').textContent='Starting...';
+  ['statPct','statSpeed','statEta','statFrag'].forEach(id => document.getElementById(id).textContent = id==='statPct'?'0%':'—');
+  document.getElementById('pctLabel').textContent='0%';
+  document.getElementById('phaseLabel').textContent='Starting...';
+  document.getElementById('logConsole').innerHTML='';
+  document.getElementById('destFile').style.display='none';
+  setDownloading(true);
+  setStatus('downloading','Connecting...');
+
+  // Reset sparkline
+  speedHistory = [];
+  resizeSparkline(); // size canvas now that section is visible
+  document.getElementById('sparklineCur').textContent = '— MB/s';
+
+  // Bubbles
+  if (bubbleInterval) clearInterval(bubbleInterval);
+  bubbleInterval = setInterval(spawnBubble, 600);
+
+  // Snapshot for history
+  const snapThumb = currentThumbUrl;
+  const snapTitle = currentTitle || videoUrl;
+  const snapQuality = quality;
+  const snapTime = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource(`/events?id=${currentSessionId}`);
+
+  eventSource.onmessage = e => {
+    const data = JSON.parse(e.data);
+    if      (data.type==='log')         addLog(data.message);
+    else if (data.type==='warning')     addLog(data.message,'warn');
+    else if (data.type==='destination') {
+      const d=document.getElementById('destFile');
+      d.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:5px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'+data.file; d.style.display='block';
+      setStatus('downloading','Downloading...');
+      bar.classList.remove('indeterminate');
+    }
+    else if (data.type==='progress')  { updateProgress(data); setStatus('downloading','Downloading...'); }
+    else if (data.type==='merging')   {
+      setStatus('merging','Merging video + audio...');
+      document.getElementById('phaseLabel').textContent='Merging with ffmpeg';
+      document.getElementById('liquidPhase').textContent='Merging';
+      bar.classList.add('indeterminate');
+      fill.style.height='99%';
+      addLog('Merging video and audio with ffmpeg...','info');
+    }
+    else if (data.type==='done') {
+      setStatus('done','Complete! 🎉');
+      bar.classList.remove('indeterminate'); bar.style.width='100%';
+      fill.style.height='100%';
+      document.getElementById('liquidTank').classList.add('active');
+      document.getElementById('liquidRight').classList.add('active');
+      document.getElementById('liquidPhase').textContent='Done ✓';
+      document.getElementById('statPct').textContent='100%';
+      document.getElementById('pctLabel').textContent='100%';
+      document.getElementById('statEta').textContent='Done';
+      document.getElementById('phaseLabel').textContent='Finished ✓';
+      addLog(data.message,'info'); setDownloading(false); eventSource.close();
+      if (bubbleInterval) { clearInterval(bubbleInterval); bubbleInterval=null; }
+      addHistory({ url:videoUrl, title:snapTitle, thumb:snapThumb, quality:snapQuality, time:snapTime, status:'done' });
+      // Show open folder button
+      let folderBtn = document.getElementById('openFolderBtn');
+      if (!folderBtn) {
+        folderBtn = document.createElement('button');
+        folderBtn.id = 'openFolderBtn';
+        folderBtn.onclick = openFolder;
+        folderBtn.style.cssText = `margin-top:12px;width:100%;padding:11px;background:var(--greenbg);border:1.5px solid var(--green);border-radius:12px;color:var(--green);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;`;
+        folderBtn.innerHTML = '📁 Open Downloads Folder';
+        folderBtn.onmouseenter = () => folderBtn.style.background = 'rgba(52,211,153,0.2)';
+        folderBtn.onmouseleave = () => folderBtn.style.background = 'var(--greenbg)';
+        document.getElementById('progress-section').appendChild(folderBtn);
+      }
+      folderBtn.style.display = 'flex';
+    }
+    else if (data.type==='error') {
+      setStatus('error','Error'); addLog(data.message,'err');
+      bar.classList.remove('indeterminate'); setDownloading(false);
+      if (!logVisible) toggleLog(); eventSource.close();
+      if (bubbleInterval) { clearInterval(bubbleInterval); bubbleInterval=null; }
+      addHistory({ url:videoUrl, title:snapTitle, thumb:snapThumb, quality:snapQuality, time:snapTime, status:'error' });
+    }
+    else if (data.type==='cancelled') {
+      setStatus('cancelled','Cancelled'); addLog(data.message,'warn');
+      bar.classList.remove('indeterminate'); setDownloading(false); eventSource.close();
+      if (bubbleInterval) { clearInterval(bubbleInterval); bubbleInterval=null; }
+      addHistory({ url:videoUrl, title:snapTitle, thumb:snapThumb, quality:snapQuality, time:snapTime, status:'cancelled' });
+    }
+    else if (data.type==='already_done') {
+      // File already exists — ask user what to do
+      setStatus('cancelled', 'Already exists');
+      setDownloading(false);
+      eventSource.close();
+      if (bubbleInterval) { clearInterval(bubbleInterval); bubbleInterval=null; }
+      showAlreadyExistsModal(data.file || videoUrl, {
+        videoUrl, quality, outputPath, audioOnly, snapThumb, snapTitle, snapQuality, snapTime
+      });
+    }
+  };
+
+  try {
+    await fetch('/download',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({videoUrl,quality,outputPath,audioOnly,sessionId:currentSessionId,force:forceOverwrite})});
+  } catch {
+    setStatus('error','Server error');
+    addLog('Could not reach server.','err');
+    setDownloading(false);
+    if (!logVisible) toggleLog();
+  }
+}
+</script>
+</body>
+</html>
