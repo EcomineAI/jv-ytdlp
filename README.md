@@ -21,7 +21,7 @@
 
 ## What is this?
 
-**jv-ytdlp** is a local desktop app that runs on your Windows PC and lets you download YouTube videos through a clean browser UI — no command line needed after setup.
+**jv-ytdlp** is a local desktop app that runs on your Windows PC and lets you download videos through a clean browser UI — no command line needed after setup.
 
 Paste a URL → pick quality → download. That's it.
 
