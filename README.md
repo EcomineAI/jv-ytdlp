@@ -33,7 +33,7 @@ Two options are available from the [Releases](https://github.com/EcomineAI/jv-yt
 
 | File | Description |
 |------|-------------|
-| `jv-ytdlp Setup 0.2.0.exe` | **Recommended.** One-click installer — installs the app, creates a desktop shortcut, and handles everything automatically. |
+| `JVDownloader.Setup.0.2.0.exe` | **Recommended.** One-click installer — installs the app, creates a desktop shortcut, and handles everything automatically. |
 | `jv-ytdlp-0.2.0-source.zip` | Source code archive. For developers who want to inspect, modify, or build from scratch. Requires Node.js ≥ 18. |
 
 > **Just want to download videos?** Grab the `.exe` installer. No Node.js required.
