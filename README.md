@@ -27,6 +27,14 @@ Paste a URL → pick quality → download. That's it.
 
 ---
 
+<img width="1920" height="1020" alt="Screenshot 2026-04-03 004733" src="https://github.com/user-attachments/assets/b7285070-f30e-4715-87cf-0e6d0888b515" />
+<img width="1920" height="1020" alt="Screenshot 2026-04-03 004744" src="https://github.com/user-attachments/assets/19069404-1b64-47d9-92c4-4daf905e78da" />
+<img width="1920" height="1020" alt="Screenshot 2026-04-03 004901" src="https://github.com/user-attachments/assets/08c62940-2620-4d45-8179-181672e5a90a" />
+<img width="1920" height="1020" alt="Screenshot 2026-04-03 004910" src="https://github.com/user-attachments/assets/ad0cd3e8-2ee6-4006-925c-7ec595e72540" />
+<img width="1920" height="1020" alt="Screenshot 2026-04-03 004917" src="https://github.com/user-attachments/assets/fbf4bee9-22b5-4c33-a678-250f623a53ab" />
+
+---
+
 ## Download — v0.2
 
 Two options are available from the [Releases](https://github.com/EcomineAI/jv-ytdlp/releases/tag/v0.2) page:
